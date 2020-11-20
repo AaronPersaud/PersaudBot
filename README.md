@@ -1,0 +1,1 @@
+Multipurpose bot for discord servers (WIP)

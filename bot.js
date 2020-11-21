@@ -5,6 +5,10 @@ const client = new Discord.Client();
 
 const prefix = "!";
 
+client.on('ready', () => {
+ console.log(`Logged in as ${client.user.tag}!`);
+ });
+
 client.on("message", function(message) {
   if (message.author.bot) return;
   if (!message.content.startsWith(prefix)) return;
@@ -23,6 +27,13 @@ client.on("message", function(message) {
     const sum = numArgs.reduce((counter, x) => counter += x);
     message.reply(`The sum of all the arguments you provided is ${sum}!`);
   }
+});
+
+client.on('guildMemberAdd', member => {
+  console.log("User " + member.user.username + " has joined the server!");
+  console.log(member);
+  // send custom message TODO
+  message.reply(`Welcome to the server!`);
 });
 
 client.login(config.BOT_TOKEN);

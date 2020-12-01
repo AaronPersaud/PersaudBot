@@ -6,7 +6,12 @@ const client = new Discord.Client();
 const prefix = "!";
 const prefix2 = "ll!"
 
-var deck = new Array(1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8)
+//var deck = new Array(1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8)
+
+let setup = false;
+let activeGame = false;
+
+const players = [];
 
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -14,9 +19,6 @@ function shuffle(array) {
     [array[i], array[j]] = [array[j], array[i]];
   }
 }
-
-shuffle(deck)
-console.log(deck)
 
 client.on('ready', () => {
  console.log(`Logged in as ${client.user.tag}!`);
@@ -43,8 +45,8 @@ client.on("message", function(message) {
   const args = commandBody.split(' ');
   const command = args.shift().toLowerCase();
 
-  console.log(args)
-  console.log(command)
+  // console.log(args)
+  // console.log(command)
 
   if (command === "ping") {
     const timeTaken = Date.now() - message.createdTimestamp;
@@ -57,7 +59,56 @@ client.on("message", function(message) {
     message.reply(`The sum of all the arguments you provided is ${sum}!`);
   }
   else if (command === "hello") {
-    message.reply(`Greetings, human!`)
+    message.reply(`Greetings, human!`);
+  }
+  else if (command === "start") {
+    if (setup) {
+     
+     let activeGame = false; message.reply(`Game already in progress!`);
+    }
+    else {
+      message.reply(`Starting new game of Love Letter. Type ll!join to join the game.`);
+      setup = true;
+
+let activeGame = false;    }
+  }
+  else if (command === "join") {
+    if (!setup) {
+     
+     let activeGame = false; message.reply(`No game in progress! Type ll!start to start a game`);
+    }
+    else if (activeGame) {
+      message.reply(`Game already in progress. Please wait for the next one.`);
+    }
+    else {
+      if (players.length === 4) {
+        message.reply(`Maximum number of players reached!`);
+      }
+      else {
+        client.channels.cache.get(message.channel.id).send(`${message.author} joins the game!`);
+        players.push(message.author);
+      }    
+    }
+  }
+  else if (command === "play") {
+    if (!setup) {
+     
+     let activeGame = false; message.reply(`No game in progress! Type ll!start to start a game`);
+    }
+    else {
+      if (players.length <= 1) {
+        message.reply(`Not enough player! Love Letter requires 2-4 players.`);
+      }
+      else {
+        activeGame = true;
+        var deck = new Array("Guard (1)","Guard (1)","Guard (1)","Guard (1)","Guard (1)","Priest (2)","Priest (2)","Baron (3)","Baron (3)","Handmaid (4)", "Handmaid (4)", "Prince (5)","Prince (5)","King (6)","Countess (7)", "Princess (8)");
+        shuffle(deck);
+        // Deal cards out
+        // Message each player their card
+        players[0].send(`You have drawn ${deck[0]}`);
+        client.channels.cache.get(message.channel.id).send(`${players[0]}, the game has started. It is your turn!`);
+      }
+    }
   }
   else if (command === "handmaid") {
     if (args.length > 0) {

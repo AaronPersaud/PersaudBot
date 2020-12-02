@@ -10,8 +10,10 @@ const prefix2 = "ll!"
 
 let setup = false;
 let activeGame = false;
+let turn = null;
 
 const players = [];
+const ids = [];
 
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -48,78 +50,138 @@ client.on("message", function(message) {
   // console.log(args)
   // console.log(command)
 
-  if (command === "ping") {
-    const timeTaken = Date.now() - message.createdTimestamp;
-    message.reply(`Pong! This message had a latency of ${timeTaken}ms.`);
-  }
+  // if (command === "ping") {
+  //   const timeTaken = Date.now() - message.createdTimestamp;
+  //   message.reply(`Pong! This message had a latency of ${timeTaken}ms.`);
+  // }
 
-  else if (command === "sum") {
-    const numArgs = args.map(x => parseFloat(x));
-    const sum = numArgs.reduce((counter, x) => counter += x);
-    message.reply(`The sum of all the arguments you provided is ${sum}!`);
-  }
-  else if (command === "hello") {
+  // else if (command === "sum") {
+  //   const numArgs = args.map(x => parseFloat(x));
+  //   const sum = numArgs.reduce((counter, x) => counter += x);
+  //   message.reply(`The sum of all the arguments you provided is ${sum}!`);
+  // }
+  if (command === "hello") {
     message.reply(`Greetings, human!`);
   }
   else if (command === "start") {
     if (setup) {
-     
-     let activeGame = false; message.reply(`Game already in progress!`);
+      message.reply(`Game already in progress!`);
     }
     else {
       message.reply(`Starting new game of Love Letter. Type ll!join to join the game.`);
       setup = true;
-
-let activeGame = false;    }
+    }
   }
   else if (command === "join") {
     if (!setup) {
-     
-     let activeGame = false; message.reply(`No game in progress! Type ll!start to start a game`);
+      message.reply(`No game in progress! Type ll!start to start a game`);
     }
     else if (activeGame) {
       message.reply(`Game already in progress. Please wait for the next one.`);
     }
     else {
-      if (players.length === 4) {
+      if (ids.includes(message.author.id)) {
+        message.reply(`You are already in the game!`);
+      }
+      else if (players.length === 4) {
         message.reply(`Maximum number of players reached!`);
       }
       else {
         client.channels.cache.get(message.channel.id).send(`${message.author} joins the game!`);
-        players.push(message.author);
+        let data = {"hand":[],"played":[],"eliminated":false,"handmaided":false,"id":message.author};
+        players.push(data);
+        ids.push(message.author.id);
       }    
     }
   }
   else if (command === "play") {
     if (!setup) {
-     
-     let activeGame = false; message.reply(`No game in progress! Type ll!start to start a game`);
+      message.reply(`No game in progress! Type ll!start to start a game`);
     }
     else {
       if (players.length <= 1) {
-        message.reply(`Not enough player! Love Letter requires 2-4 players.`);
+        message.reply(`Not enough players! Love Letter requires 2-4 players.`);
       }
       else {
         activeGame = true;
         var deck = new Array("Guard (1)","Guard (1)","Guard (1)","Guard (1)","Guard (1)","Priest (2)","Priest (2)","Baron (3)","Baron (3)","Handmaid (4)", "Handmaid (4)", "Prince (5)","Prince (5)","King (6)","Countess (7)", "Princess (8)");
         shuffle(deck);
-        // Deal cards out
-        // Message each player their card
-        players[0].send(`You have drawn ${deck[0]}`);
-        client.channels.cache.get(message.channel.id).send(`${players[0]}, the game has started. It is your turn!`);
+        console.log(deck);
+        for (var player of players) {
+          player.id.send(`You have drawn ${deck[0]}`);
+          player.hand.push(deck[0]);
+          deck.shift();
+        }
+        client.channels.cache.get(message.channel.id).send(`${players[0].id}, the game has started. It is your turn!`);
+        turn = 0;
+        console.log(deck);
       }
     }
+    // add check to make sure only people in the game can start it 
+    // cant call play if play is already true
+  }
+  else if (command === "guard") {
+    // is it your turn?
+    // have the card
+    // game started
+    // are you in the game
+    // arguments
+    // wrong argument
+    // handmaid check
+    // logic (check if player's card is equal to guess)
+  }
+  else if (command === "priest") {
+    // is it your turn?
+    // have the card
+    // game started
+    // are you in the game
+    // arguments
+    // wrong argument
+    // handmaid check
+    // logic (send player card name)
+  }
+  else if (command === "king") {
+    // is it your turn?
+    // have the card
+    // game started
+    // are you in the game
+    // arguments
+    // wrong argument
+    // handmaid check
+    // logic (switch hands)
   }
   else if (command === "handmaid") {
-    if (args.length > 0) {
+    if (!activeGame) {
+      message.reply("Game not started as yet! Type ll!play to start the game.")
+    }
+    else if (!ids.includes(message.author.id)) {
+      message.reply(`,you are not in this game! Please wait for the next one.`)
+    }
+    else if (ids[turn] !== message.author.id) {
+      message.reply(`,it is not your turn! It is ${players[turn].id}'s turn.`)
+    }
+    else if (args.length > 0) {
       message.reply("No arguments are necessary for this card");
     }
-    // need case for if you don't have it
+    else if (!players[turn].hand.includes("Handmaid (4)")) {
+      message.reply("You are currently not holding this card!");
+    }
     else {
       message.reply("You are now protected for this round");
-      // set some variable to true
+      players[turn].handmaid = true;
+      players[turn].played.push(4);
+      const index = player[turn].hand.indexof("Handmaid (4)");
+      player[turn].hand.splice(index,1);
+      // turn off handmaid when it's their turn again
     }
   }
 });
 
 client.login(config.BOT_TOKEN);
+
+//TODO
+// - make it work in multiple servers at once
+// - let player player in multiple servers at once
+// - timeout
+// - make logic for ending a game (declaring winner, resetting variables)
+// - make logic for starting the next player's turn

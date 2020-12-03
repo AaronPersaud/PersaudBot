@@ -6,7 +6,8 @@ const client = new Discord.Client();
 const prefix = "!";
 const prefix2 = "ll!"
 
-//var deck = new Array(1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8)
+var deck = new Array("Guard (1)","Guard (1)","Guard (1)","Guard (1)","Guard (1)","Priest (2)","Priest (2)","Baron (3)","Baron (3)","Handmaid (4)", "Handmaid (4)", "Prince (5)","Prince (5)","King (6)","Countess (7)", "Princess (8)");
+let shuffled = null;
 
 let setup = false;
 let activeGame = false;
@@ -15,11 +16,50 @@ let turn = null;
 const players = [];
 const ids = [];
 
-function shuffle(array) {
+//Fisher-Yates shuffling algorithm (returns new array)
+function shuffle(arr) {
+  let array = [...arr]; 
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
+  return array;
+}
+
+function nextTurn(channelID) {
+  const remaining = [];
+  for (var player of players) {
+          if(!player.eliminated) {
+            remaining.push(player.id);
+          }
+  }
+  if (remaining.length === 1 || deck.length <= 1) {
+    return declareWinner(remaining);
+  }
+  while(true) {
+    if (turn === players.length - 1) {
+      turn = 0;
+    }
+    else {
+      turn += 1;
+    }
+    if (remaining.includes(players[turn].id)) {
+      break;
+    } 
+  }
+  players[turn].handmaided = false;
+  players[turn].hand.push(shuffled[0]);
+  players[turn].id.send(`You have drawn ${shuffled[0]}. It is your turn!`);
+  shuffled.shift();
+  client.channels.cache.get(channelID).send(`It is ${players[turn].id}'s turn!`);
+}
+
+function declareWinner(remaining) {
+  //check 1 player left, he/she wins
+  //compare scores, highest number wins
+  //if tie, compare scores, declare winner 
+  //it tie again, declare tie
+  //reset variables 
 }
 
 client.on('ready', () => {
@@ -104,21 +144,21 @@ client.on("message", function(message) {
       }
       else {
         activeGame = true;
-        var deck = new Array("Guard (1)","Guard (1)","Guard (1)","Guard (1)","Guard (1)","Priest (2)","Priest (2)","Baron (3)","Baron (3)","Handmaid (4)", "Handmaid (4)", "Prince (5)","Prince (5)","King (6)","Countess (7)", "Princess (8)");
-        shuffle(deck);
+        shuffled = shuffle(deck);
         console.log(deck);
+        console.log(shuffled);
         for (var player of players) {
-          player.id.send(`You have drawn ${deck[0]}`);
-          player.hand.push(deck[0]);
-          deck.shift();
+          player.id.send(`You have drawn ${shuffled[0]}`);
+          player.hand.push(shuffled[0]);
+          shuffled.shift();
         }
         client.channels.cache.get(message.channel.id).send(`${players[0].id}, the game has started. It is your turn!`);
         turn = 0;
-        console.log(deck);
+        console.log(shuffled);
       }
     }
     // add check to make sure only people in the game can start it 
-    // cant call play if play is already true
+    // cant call activeGame if play is already true
   }
   else if (command === "guard") {
     // is it your turn?
@@ -127,6 +167,7 @@ client.on("message", function(message) {
     // are you in the game
     // arguments
     // wrong argument
+    // check if opponent not eliminated
     // handmaid check
     // logic (check if player's card is equal to guess)
   }
@@ -137,6 +178,7 @@ client.on("message", function(message) {
     // are you in the game
     // arguments
     // wrong argument
+    // check if opponent is not eliminated
     // handmaid check
     // logic (send player card name)
   }
@@ -147,6 +189,7 @@ client.on("message", function(message) {
     // are you in the game
     // arguments
     // wrong argument
+    // check if opponent is not eliminated
     // handmaid check
     // logic (switch hands)
   }
@@ -168,11 +211,11 @@ client.on("message", function(message) {
     }
     else {
       message.reply("You are now protected for this round");
-      players[turn].handmaid = true;
+      players[turn].handmaided = true;
       players[turn].played.push(4);
-      const index = player[turn].hand.indexof("Handmaid (4)");
-      player[turn].hand.splice(index,1);
-      // turn off handmaid when it's their turn again
+      const index = players[turn].hand.indexOf("Handmaid (4)");
+      players[turn].hand.splice(index,1);
+      nextTurn(message.channel.id);
     }
   }
 });
@@ -183,5 +226,5 @@ client.login(config.BOT_TOKEN);
 // - make it work in multiple servers at once
 // - let player player in multiple servers at once
 // - timeout
-// - make logic for ending a game (declaring winner, resetting variables)
-// - make logic for starting the next player's turn
+// leave game
+// stop game

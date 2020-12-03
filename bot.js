@@ -26,6 +26,16 @@ function shuffle(arr) {
   return array;
 }
 
+function remaining(lst) {
+  const remaining = [];
+  for (var player of players) {
+    if(!player.eliminated) {
+      remaining.push(player.id.id);
+    }
+  }
+  return remaining;
+}
+
 function nextTurn(channelID) {
   const remaining = [];
   for (var player of players) {
@@ -33,7 +43,7 @@ function nextTurn(channelID) {
             remaining.push(player.id);
           }
   }
-  if (remaining.length === 1 || deck.length <= 1) {
+  if (remaining.length === 1 || shuffled.length <= 1) {
     return declareWinner(remaining);
   }
   while(true) {
@@ -87,7 +97,6 @@ client.on("message", function(message) {
   const args = commandBody.split(' ');
   const command = args.shift().toLowerCase();
 
-  // console.log(args)
   // console.log(command)
 
   // if (command === "ping") {
@@ -160,6 +169,67 @@ client.on("message", function(message) {
     // add check to make sure only people in the game can start it 
     // cant call activeGame if play is already true
   }
+  //TODO
+  else if (command === "baron") {
+    const remain = remaining(players);
+    const opponent = message.mentions.users.first() || null;
+    if (!activeGame) {
+      message.reply("Game not started as yet! Type ll!play to start the game.")
+    }
+    else if (!ids.includes(message.author.id)) {
+      message.reply(`,you are not in this game! Please wait for the next one.`)
+    }
+    else if (ids[turn] !== message.author.id) {
+      message.reply(`,it is not your turn! It is ${players[turn].id}'s turn.`)
+    }
+    else if (!players[turn].hand.includes("Baron (3)")) {
+      message.reply("You are currently not holding this card!");
+    }
+    else if (args.length !== 1) {
+      message.reply("You are either missing arguments or have too many arguments. Type your command as: ll!baron @player");
+    }
+    else if (!opponent) {
+      message.reply("Please enter a valid user! Type your command as: ll!baron @player");
+    }
+    else if (!ids.includes(opponent.id)) {
+      message.reply("This user is not in the game! Please enter a valid user.");
+    }
+    else if (!remain.includes(opponent.id)) {
+      message.reply("That user has been eliminated! Please choose another user.");
+    }
+    //handmaid check
+  }
+  //TODO
+  else if (command === "prince") {
+        const remain = remaining(players);
+    const opponent = message.mentions.users.first() || null;
+    if (!activeGame) {
+      message.reply("Game not started as yet! Type ll!play to start the game.")
+    }
+    else if (!ids.includes(message.author.id)) {
+      message.reply(`,you are not in this game! Please wait for the next one.`)
+    }
+    else if (ids[turn] !== message.author.id) {
+      message.reply(`,it is not your turn! It is ${players[turn].id}'s turn.`)
+    }
+    else if (!players[turn].hand.includes("Prince (5)")) {
+      message.reply("You are currently not holding this card!");
+    }
+    else if (args.length !== 1) {
+      message.reply("You are either missing arguments or have too many arguments. Type your command as: ll!prince @player");
+    }
+    else if (!opponent) {
+      message.reply("Please enter a valid user! Type your command as: ll!prince @player");
+    }
+    else if (!ids.includes(opponent.id)) {
+      message.reply("This user is not in the game! Please enter a valid user.");
+    }
+    else if (!remain.includes(opponent.id)) {
+      message.reply("That user has been eliminated! Please choose another user.");
+    }
+    //handmaid check
+  }
+  //TODO
   else if (command === "guard") {
     // is it your turn?
     // have the card
@@ -172,24 +242,76 @@ client.on("message", function(message) {
     // logic (check if player's card is equal to guess)
   }
   else if (command === "priest") {
-    // is it your turn?
-    // have the card
-    // game started
-    // are you in the game
-    // arguments
-    // wrong argument
-    // check if opponent is not eliminated
-    // handmaid check
-    // logic (send player card name)
+    const remain = remaining(players);
+    const opponent = message.mentions.users.first() || null;
+    if (!activeGame) {
+      message.reply("Game not started as yet! Type ll!play to start the game.")
+    }
+    else if (!ids.includes(message.author.id)) {
+      message.reply(`,you are not in this game! Please wait for the next one.`)
+    }
+    else if (ids[turn] !== message.author.id) {
+      message.reply(`,it is not your turn! It is ${players[turn].id}'s turn.`)
+    }
+    else if (!players[turn].hand.includes("Priest (2)")) {
+      message.reply("You are currently not holding this card!");
+    }
+    else if (args.length !== 1) {
+      message.reply("You are either missing arguments or have too many arguments. Type your command as: ll!priest @player");
+    }
+    else if (!opponent) {
+      message.reply("Please enter a valid user! Type your command as: ll!priest @player");
+    }
+    else if (!ids.includes(opponent.id)) {
+      message.reply("This user is not in the game! Please enter a valid user.");
+    }
+    else if (!remain.includes(opponent.id)) {
+      message.reply("That user has been eliminated! Please choose another user.");
+    }
+    else if (players[ids.indexOf(opponent.id)].handmaided) {
+      message.reply("that user is protected by handmaid! Your card will have no effect.");
+      players[turn].played.push(2);
+      const index = players[turn].hand.indexOf("Priest (2)");
+      players[turn].hand.splice(index,1);
+      nextTurn(message.channel.id);
+    }
+    else {
+      message.reply(`you have been shown ${opponent}'s card in private!`);
+      players[turn].id.send(`${opponent} is current holding ${players[ids.indexOf(opponent.id)].hand[0]}.`);
+      players[turn].played.push(2);
+      const index = players[turn].hand.indexOf("Priest (2)");
+      players[turn].hand.splice(index,1);
+      nextTurn(message.channel.id);
+    }
   }
+  //TODO
   else if (command === "king") {
-    // is it your turn?
-    // have the card
-    // game started
-    // are you in the game
-    // arguments
-    // wrong argument
-    // check if opponent is not eliminated
+    const remain = remaining(players);
+    const opponent = message.mentions.users.first() || null;
+    if (!activeGame) {
+      message.reply("Game not started as yet! Type ll!play to start the game.")
+    }
+    else if (!ids.includes(message.author.id)) {
+      message.reply(`,you are not in this game! Please wait for the next one.`)
+    }
+    else if (ids[turn] !== message.author.id) {
+      message.reply(`,it is not your turn! It is ${players[turn].id}'s turn.`)
+    }
+    else if (!players[turn].hand.includes("King (6)")) {
+      message.reply("You are currently not holding this card!");
+    }
+    else if (args.length !== 1) {
+      message.reply("You are either missing arguments or have too many arguments. Type your command as: ll!king @player");
+    }
+    else if (!opponent) {
+      message.reply("Please enter a valid user! Type your command as: ll!king @player");
+    }
+    else if (!ids.includes(opponent.id)) {
+      message.reply("This user is not in the game! Please enter a valid user.");
+    }
+    else if (!remain.includes(opponent.id)) {
+      message.reply("That user has been eliminated! Please choose another user.");
+    }
     // handmaid check
     // logic (switch hands)
   }
@@ -228,3 +350,8 @@ client.login(config.BOT_TOKEN);
 // - timeout
 // leave game
 // stop game
+// you can't guard yourself
+// --  -- baron --
+// -- -- priest, king
+// give player 1 extra card
+// on changeturn, display both cards they're holding

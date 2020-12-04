@@ -161,6 +161,10 @@ client.on("message", function(message) {
           player.hand.push(shuffled[0]);
           shuffled.shift();
         }
+        card = shuffled[0];
+        players[0].hand.push(card);
+        players[0].id.send(`You drew ${card}. Your hand is ${players[0].hand}`);
+        shuffled.shift();
         client.channels.cache.get(message.channel.id).send(`${players[0].id}, the game has started. It is your turn!`);
         turn = 0;
         console.log(shuffled);
@@ -169,7 +173,6 @@ client.on("message", function(message) {
     // add check to make sure only people in the game can start it 
     // cant call activeGame if play is already true
   }
-  //TODO
   else if (command === "baron") {
     const remain = remaining(players);
     const opponent = message.mentions.users.first() || null;
@@ -197,7 +200,38 @@ client.on("message", function(message) {
     else if (!remain.includes(opponent.id)) {
       message.reply("That user has been eliminated! Please choose another user.");
     }
-    //handmaid check
+    else if (message.author.id === opponent.id) {
+      message.reply("You cannot play baron on yourself! Please choose another user.");
+    }
+    else if (players[ids.indexOf(opponent.id)].handmaided) {
+      message.reply("that user is protected by handmaid! Your card will have no effect.");
+      players[turn].played.push(3);
+      const index = players[turn].hand.indexOf("Baron (3)");
+      players[turn].hand.splice(index,1);
+      nextTurn(message.channel.id);
+    }
+    else {
+      players[turn].played.push(3);
+      const index = players[turn].hand.indexOf("Baron (3)");
+      players[turn].hand.splice(index,1);
+      player_card = players[turn].hand[0];
+      opponent_card = players[ids.indexOf(opponent.id)].hand[0];
+      player_val = parseInt(player_card.charAt(player_card.length-2));
+      opponent_val = parseInt(opponent_card.charAt(opponent_card.length-2));
+      if (player_val > opponent_val) {
+        client.channels.cache.get(channelID).send(`${opponent} has been eliminated since ${opponent_card} has the smaller value`);
+        opponent_index = ids.indexof(opponent.id);
+        players[opponent_index].eliminated = true;
+      }
+      else if (opponent_val > player_val) {
+        message.reply(`you have been eliminated since your ${player_card} has the smaller value. Congratulations, you played yourself.`);
+        players[turn].eliminated = true;
+      } 
+      else {
+        client.channels.cache.get(channelID).send(`${players[turn].id} and ${opponent} are holding the same card, so no one was eliminated.`);
+      }    
+      nextTurn(message.channel.id);
+    }
   }
   //TODO
   else if (command === "prince") {
@@ -227,7 +261,12 @@ client.on("message", function(message) {
     else if (!remain.includes(opponent.id)) {
       message.reply("That user has been eliminated! Please choose another user.");
     }
-    //handmaid check
+    else if (players[ids.indexOf(opponent.id)].handmaided) {
+      message.reply("that user is protected by handmaid! You must either choose another player or yourself.");
+    }
+    else {
+      //logic
+    }
   }
   //TODO
   else if (command === "guard") {
@@ -268,6 +307,9 @@ client.on("message", function(message) {
     else if (!remain.includes(opponent.id)) {
       message.reply("That user has been eliminated! Please choose another user.");
     }
+    else if (message.author.id === opponent.id) {
+      message.reply("You cannot play priest on yourself! Please choose another user.");
+    }
     else if (players[ids.indexOf(opponent.id)].handmaided) {
       message.reply("that user is protected by handmaid! Your card will have no effect.");
       players[turn].played.push(2);
@@ -284,7 +326,6 @@ client.on("message", function(message) {
       nextTurn(message.channel.id);
     }
   }
-  //TODO
   else if (command === "king") {
     const remain = remaining(players);
     const opponent = message.mentions.users.first() || null;
@@ -312,8 +353,30 @@ client.on("message", function(message) {
     else if (!remain.includes(opponent.id)) {
       message.reply("That user has been eliminated! Please choose another user.");
     }
-    // handmaid check
-    // logic (switch hands)
+    else if (message.author.id === opponent.id) {
+      message.reply("You cannot play king on yourself! Please choose another user.");
+    }
+    else if (players[ids.indexOf(opponent.id)].handmaided) {
+      message.reply("that user is protected by handmaid! Your card will have no effect.");
+      players[turn].played.push(6);
+      const index = players[turn].hand.indexOf("King (6)");
+      players[turn].hand.splice(index,1);
+      nextTurn(message.channel.id);
+    }
+    else {
+      players[turn].played.push(6);
+      const index = players[turn].hand.indexOf("King (6)");
+      players[turn].hand.splice(index,1);
+      player_card = players[turn].hand[0];
+      opponent_card = players[ids.indexOf(opponent.id)].hand[0];
+      players[turn].hand.shift();
+      players[ids.indexOf(opponent.id)].hand.shift();
+      players[turn].hand.push(opponent_card);
+      players[ids.indexOf(opponent.id)].hand.push(player_card);
+      message.reply(`you and ${opponent} have swapped cards!`);
+      players[turn].id.send(`You now have ${opponent_card} and ${opponent} now has ${player_card}.`);
+      nextTurn(message.channel.id);
+    }
   }
   else if (command === "handmaid") {
     if (!activeGame) {
@@ -351,7 +414,6 @@ client.login(config.BOT_TOKEN);
 // leave game
 // stop game
 // you can't guard yourself
-// --  -- baron --
-// -- -- priest, king
-// give player 1 extra card
 // on changeturn, display both cards they're holding
+
+//prince, guard, countess

@@ -6,6 +6,8 @@ const client = new Discord.Client();
 const prefix = "!";
 const prefix2 = "ll!"
 
+const greetings = {0:"Greetings, human!",1:"What it do, baybee?",2:"How you doin'?",3:"May the force be with you"}
+
 var deck = new Array("Guard (1)","Guard (1)","Guard (1)","Guard (1)","Guard (1)","Priest (2)","Priest (2)","Baron (3)","Baron (3)","Handmaid (4)", "Handmaid (4)", "Prince (5)","Prince (5)","King (6)","Countess (7)", "Princess (8)");
 let shuffled = null;
 
@@ -78,7 +80,6 @@ client.on('ready', () => {
 
 client.on('guildMemberAdd', function(member) {
   console.log("User " + member.user.username + " has joined the server!");
-  // send custom message TODO
   member.send(`Welcome to the server, scrub!`);
   const general = member.guild.channels.cache.find(c => c.name === "general");
   if (general) general.send(`Welcome ${member.user.username}! We're glad to have you here.`);
@@ -110,7 +111,10 @@ client.on("message", function(message) {
   //   message.reply(`The sum of all the arguments you provided is ${sum}!`);
   // }
   if (command === "hello") {
-    message.reply(`Greetings, human!`);
+    const num = Math.floor(Math.random() * (Object.keys(greetings).length));
+    //message.reply(greetings[num]);
+    message.channel.send(`${message.author}: `+greetings[num]);
+
   }
   else if (command === "start") {
     if (setup) {
@@ -233,9 +237,8 @@ client.on("message", function(message) {
       nextTurn(message.channel.id);
     }
   }
-  //TODO
   else if (command === "prince") {
-        const remain = remaining(players);
+    const remain = remaining(players);
     const opponent = message.mentions.users.first() || null;
     if (!activeGame) {
       message.reply("Game not started as yet! Type ll!play to start the game.")
@@ -265,19 +268,66 @@ client.on("message", function(message) {
       message.reply("that user is protected by handmaid! You must either choose another player or yourself.");
     }
     else {
-      //logic
+      players[turn].played.push(5);
+      const index = players[turn].hand.indexOf("Prince (5)");
+      players[turn].hand.splice(index,1);
+      princed_index = ids.indexOf(opponent.id);
+      if (players[princed_index].hand[0] === "Princess (8)") {
+        message.channel.send(`${players[princed_index]} has discarded the Princess. They have been eliminated!`);
+        players[princed_index].eliminated = true;
+      }
+      else () {
+        const princed = players[princed_index];
+        message.channel.send(`${princed} has discarded ${princed.hand[0]} and will draw a new card.`);
+        princed.hand.shift();
+        const new_card = shuffled[0];
+        shuffled.shift();
+        princed.hand.push(new_card);
+        princed.send(`Your new card is ${new_card}.`);
+      }
+      nextTurn(message.channel.id);      
     }
   }
   //TODO
   else if (command === "guard") {
-    // is it your turn?
-    // have the card
-    // game started
-    // are you in the game
+    const remain = remaining(players);
+    const opponent = message.mentions.users.first() || null;
+    if (!activeGame) {
+      message.reply("Game not started as yet! Type ll!play to start the game.")
+    }
+    else if (!ids.includes(message.author.id)) {
+      message.reply(`,you are not in this game! Please wait for the next one.`)
+    }
+    else if (ids[turn] !== message.author.id) {
+      message.reply(`,it is not your turn! It is ${players[turn].id}'s turn.`)
+    }
+    else if (!players[turn].hand.includes("Guard (1)")) {
+      message.reply("You are currently not holding this card!");
+    }
+    else if (args.length !== 1) {
+      message.reply("You are either missing arguments or have too many arguments. Type your command as: ll!baron @player");
+    }
+    else if (!opponent) {
+      message.reply("Please enter a valid user! Type your command as: ll!baron @player");
+    }
+    else if (!ids.includes(opponent.id)) {
+      message.reply("This user is not in the game! Please enter a valid user.");
+    }
+    else if (!remain.includes(opponent.id)) {
+      message.reply("That user has been eliminated! Please choose another user.");
+    }
+    else if (message.author.id === opponent.id) {
+      message.reply("You cannot play baron on yourself! Please choose another user.");
+    }
+    else if (players[ids.indexOf(opponent.id)].handmaided) {
+      message.reply("that user is protected by handmaid! Your card will have no effect.");
+      players[turn].played.push(3);
+      const index = players[turn].hand.indexOf("Baron (3)");
+      players[turn].hand.splice(index,1);
+      nextTurn(message.channel.id);
+    }
     // arguments
     // wrong argument
-    // check if opponent not eliminated
-    // handmaid check
     // logic (check if player's card is equal to guess)
   }
   else if (command === "priest") {
@@ -403,6 +453,30 @@ client.on("message", function(message) {
       nextTurn(message.channel.id);
     }
   }
+  else if (command === "countess") {
+    if (!activeGame) {
+      message.reply("Game not started as yet! Type ll!play to start the game.")
+    }
+    else if (!ids.includes(message.author.id)) {
+      message.reply(`,you are not in this game! Please wait for the next one.`)
+    }
+    else if (ids[turn] !== message.author.id) {
+      message.reply(`,it is not your turn! It is ${players[turn].id}'s turn.`)
+    }
+    else if (args.length > 0) {
+      message.reply("No arguments are necessary for this card");
+    }
+    else if (!players[turn].hand.includes("Countess (7)")) {
+      message.reply("You are currently not holding this card!");
+    }
+    else {
+      message.reply("You have played the countess.");
+      players[turn].played.push(7);
+      const index = players[turn].hand.indexOf("Countess (7)");
+      players[turn].hand.splice(index,1);
+      nextTurn(message.channel.id);
+    }
+  }
 });
 
 client.login(config.BOT_TOKEN);
@@ -415,5 +489,6 @@ client.login(config.BOT_TOKEN);
 // stop game
 // you can't guard yourself
 // on changeturn, display both cards they're holding
+// make prince and king force you to discard countess
 
-//prince, guard, countess
+//guard, 

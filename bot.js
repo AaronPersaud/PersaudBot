@@ -42,7 +42,7 @@ function nextTurn(channelID) {
   const remaining = [];
   for (var player of players) {
           if(!player.eliminated) {
-            remaining.push(player.id);
+            remaining.push([player.hand,player.id]);
           }
   }
   if (remaining.length === 1 || shuffled.length <= 1) {
@@ -67,11 +67,23 @@ function nextTurn(channelID) {
 }
 
 function declareWinner(remaining) {
-  //check 1 player left, he/she wins
+  const finalCards {};
+  for (left of remaining) {
+    let entry = parseInt(left[0].charAt(player_card.length-2))
+    finalCards[entry] = left[1];
+  }
+  if (remaining.length === 1) {
+    client.channels.cache.get(channelID).send(`Since they are the only player remaining, ${Object.values(remaining)[0]} is the winner!`);
+  } 
   //compare scores, highest number wins
   //if tie, compare scores, declare winner 
   //it tie again, declare tie
-  //reset variables 
+  shuffled = null;
+  setup = false;
+  activeGame = false;
+  turn = null;
+  players.splice(0, players.length);
+  ids.splice(0, ids.length);
 }
 
 client.on('ready', () => {
@@ -97,8 +109,6 @@ client.on("message", function(message) {
   }
   const args = commandBody.split(' ');
   const command = args.shift().toLowerCase();
-
-  // console.log(command)
 
   // if (command === "ping") {
   //   const timeTaken = Date.now() - message.createdTimestamp;
@@ -276,7 +286,7 @@ client.on("message", function(message) {
         message.channel.send(`${players[princed_index]} has discarded the Princess. They have been eliminated!`);
         players[princed_index].eliminated = true;
       }
-      else () {
+      else {
         const princed = players[princed_index];
         message.channel.send(`${princed} has discarded ${princed.hand[0]} and will draw a new card.`);
         princed.hand.shift();
@@ -288,10 +298,10 @@ client.on("message", function(message) {
       nextTurn(message.channel.id);      
     }
   }
-  //TODO
   else if (command === "guard") {
     const remain = remaining(players);
     const opponent = message.mentions.users.first() || null;
+    const valid = ['priest','baron','handmaid','prince','king','countess','princess'];
     if (!activeGame) {
       message.reply("Game not started as yet! Type ll!play to start the game.")
     }
@@ -304,11 +314,11 @@ client.on("message", function(message) {
     else if (!players[turn].hand.includes("Guard (1)")) {
       message.reply("You are currently not holding this card!");
     }
-    else if (args.length !== 1) {
-      message.reply("You are either missing arguments or have too many arguments. Type your command as: ll!baron @player");
+    else if (args.length !== 2) {
+      message.reply("You are either missing arguments or have too many arguments. Type your command as: ll!guard @player card");
     }
     else if (!opponent) {
-      message.reply("Please enter a valid user! Type your command as: ll!baron @player");
+      message.reply("Please enter a valid user! Type your command as: ll!guard @player card");
     }
     else if (!ids.includes(opponent.id)) {
       message.reply("This user is not in the game! Please enter a valid user.");
@@ -317,18 +327,37 @@ client.on("message", function(message) {
       message.reply("That user has been eliminated! Please choose another user.");
     }
     else if (message.author.id === opponent.id) {
-      message.reply("You cannot play baron on yourself! Please choose another user.");
+      message.reply("You cannot play guard on yourself! Please choose another user.");
+    }
+    else if ((args[1]) === "guard") {
+      message.reply("You cannot guess guard! Try again.");
+    }
+    else if (!valid.includes(args[1])) {
+      message.reply("Not a valid card! Valid cards are as follows: priest baron handmaid prince king countess princess");
     }
     else if (players[ids.indexOf(opponent.id)].handmaided) {
       message.reply("that user is protected by handmaid! Your card will have no effect.");
-      players[turn].played.push(3);
-      const index = players[turn].hand.indexOf("Baron (3)");
+      players[turn].played.push(1);
+      const index = players[turn].hand.indexOf("Guard (1)");
       players[turn].hand.splice(index,1);
       nextTurn(message.channel.id);
     }
-    // arguments
-    // wrong argument
-    // logic (check if player's card is equal to guess)
+    else {
+      opponent_card = players[ids.indexOf(opponent.id)].hand[0];
+      converted = opponent_card.split(' ')[0].toLowerCase();
+      console.log(converted);
+      if (converted === args[1]) {
+        message.reply(`you have guessed correctly! ${opponent} is now eliminated.`);
+        players[ids.indexOf(opponent.id)].eliminated = true;
+      }
+      else {
+        message.reply(`wrong! ${opponent} was not holding a ${args[1]}.`);
+      }
+      const index = players[turn].hand.indexOf("Guard (1)");
+      players[turn].hand.splice(index,1);
+      nextTurn(message.channel.id);
+    }
+    
   }
   else if (command === "priest") {
     const remain = remaining(players);
@@ -487,8 +516,5 @@ client.login(config.BOT_TOKEN);
 // - timeout
 // leave game
 // stop game
-// you can't guard yourself
 // on changeturn, display both cards they're holding
 // make prince and king force you to discard countess
-
-//guard, 

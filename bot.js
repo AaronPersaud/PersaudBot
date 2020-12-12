@@ -42,11 +42,11 @@ function nextTurn(channelID) {
   const remaining = [];
   for (var player of players) {
           if(!player.eliminated) {
-            remaining.push([player.hand,player.id]);
+            remaining.push(player.id);
           }
   }
   if (remaining.length === 1 || shuffled.length <= 1) {
-    return declareWinner(remaining);
+    return declareWinner(remaining,channelID);
   }
   while(true) {
     if (turn === players.length - 1) {
@@ -66,15 +66,20 @@ function nextTurn(channelID) {
   client.channels.cache.get(channelID).send(`It is ${players[turn].id}'s turn!`);
 }
 
-function declareWinner(remaining) {
-  const finalCards {};
-  for (left of remaining) {
-    let entry = parseInt(left[0].charAt(player_card.length-2))
-    finalCards[entry] = left[1];
-  }
+function declareWinner(remaining,channel) {
+  const finalCards = {};
+  console.log(remaining);
   if (remaining.length === 1) {
-    client.channels.cache.get(channelID).send(`Since they are the only player remaining, ${Object.values(remaining)[0]} is the winner!`);
-  } 
+    client.channels.cache.get(channel).send(`Since they are the only player remaining, ${remaining[0]} is the winner!`);
+  }
+  else {
+    client.channels.cache.get(channel).send(`Game over! TODO: determine winner.`);
+    for (let player of remaining) {
+      const lastCard = player[played].slice(-1)[0]
+      const entry = parseInt(lastCard.charAt(lastCard.length-2))
+      finalCards[player] = entry;
+    }   
+  }
   //compare scores, highest number wins
   //if tie, compare scores, declare winner 
   //it tie again, declare tie
@@ -233,8 +238,8 @@ client.on("message", function(message) {
       player_val = parseInt(player_card.charAt(player_card.length-2));
       opponent_val = parseInt(opponent_card.charAt(opponent_card.length-2));
       if (player_val > opponent_val) {
-        client.channels.cache.get(channelID).send(`${opponent} has been eliminated since ${opponent_card} has the smaller value`);
-        opponent_index = ids.indexof(opponent.id);
+        client.channels.cache.get(message.channel.id).send(`${opponent} has been eliminated since ${opponent_card} has the smaller value`);
+        opponent_index = ids.indexOf(opponent.id);
         players[opponent_index].eliminated = true;
       }
       else if (opponent_val > player_val) {
@@ -242,7 +247,7 @@ client.on("message", function(message) {
         players[turn].eliminated = true;
       } 
       else {
-        client.channels.cache.get(channelID).send(`${players[turn].id} and ${opponent} are holding the same card, so no one was eliminated.`);
+        client.channels.cache.get(message.channel.id).send(`${players[turn].id} and ${opponent} are holding the same card, so no one was eliminated.`);
       }    
       nextTurn(message.channel.id);
     }
@@ -283,17 +288,17 @@ client.on("message", function(message) {
       players[turn].hand.splice(index,1);
       princed_index = ids.indexOf(opponent.id);
       if (players[princed_index].hand[0] === "Princess (8)") {
-        message.channel.send(`${players[princed_index]} has discarded the Princess. They have been eliminated!`);
+        message.channel.send(`${players[princed_index].id} has discarded the Princess. They have been eliminated!`);
         players[princed_index].eliminated = true;
       }
       else {
         const princed = players[princed_index];
-        message.channel.send(`${princed} has discarded ${princed.hand[0]} and will draw a new card.`);
+        message.channel.send(`${princed.id} has discarded ${princed.hand[0]} and will draw a new card.`);
         princed.hand.shift();
         const new_card = shuffled[0];
         shuffled.shift();
         princed.hand.push(new_card);
-        princed.send(`Your new card is ${new_card}.`);
+        princed.id.send(`Your new card is ${new_card}.`);
       }
       nextTurn(message.channel.id);      
     }
@@ -345,7 +350,6 @@ client.on("message", function(message) {
     else {
       opponent_card = players[ids.indexOf(opponent.id)].hand[0];
       converted = opponent_card.split(' ')[0].toLowerCase();
-      console.log(converted);
       if (converted === args[1]) {
         message.reply(`you have guessed correctly! ${opponent} is now eliminated.`);
         players[ids.indexOf(opponent.id)].eliminated = true;
@@ -454,6 +458,7 @@ client.on("message", function(message) {
       players[ids.indexOf(opponent.id)].hand.push(player_card);
       message.reply(`you and ${opponent} have swapped cards!`);
       players[turn].id.send(`You now have ${opponent_card} and ${opponent} now has ${player_card}.`);
+      //send card to opponent as well 
       nextTurn(message.channel.id);
     }
   }
@@ -518,3 +523,4 @@ client.login(config.BOT_TOKEN);
 // stop game
 // on changeturn, display both cards they're holding
 // make prince and king force you to discard countess
+// you can only enter commands into the channel

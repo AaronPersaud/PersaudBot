@@ -2,6 +2,7 @@ const Discord = require("discord.js");
 const config = require("./config.json");
 
 const client = new Discord.Client();
+const giphy = require('giphy-api')(config.GIPHY_TOKEN);
 
 const prefix = "!";
 const prefix2 = "ll!"
@@ -130,6 +131,17 @@ client.on("message", function(message) {
     //message.reply(greetings[num]);
     message.channel.send(`${message.author}: `+greetings[num]);
 
+  }
+  else if (command === "gif") {
+    giphy.random({
+    tag: 'Pokemon',
+    }, function (err, res) {
+      const embed = new Discord.MessageEmbed() 
+      .setTitle("Random Pokemon GIF")
+      .setTimestamp()
+      .setImage(res.data.images.original.url)
+      message.channel.send(embed);
+    });
   }
   else if (command === "start") {
     if (setup) {

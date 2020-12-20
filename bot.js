@@ -133,15 +133,30 @@ client.on("message", function(message) {
 
   }
   else if (command === "gif") {
-    giphy.random({
-    tag: 'Pokemon',
-    }, function (err, res) {
-      const embed = new Discord.MessageEmbed() 
-      .setTitle("Random Pokemon GIF")
-      .setTimestamp()
-      .setImage(res.data.images.original.url)
-      message.channel.send(embed);
-    });
+    // multiple arguments
+    // no arguments
+    // space tag out in title
+    const tag = args[0] || null;
+    if (args.length > 0) {
+      giphy.random({
+      tag: tag,
+      }, function (err, res) {
+        if (err) { // elaborate on this in future
+          message.channel.send(`Something went wrong! Please try again.`);
+        }
+        else if (res.data.images) {
+          console.log(res)
+          const embed = new Discord.MessageEmbed() 
+          .setTitle(`Random ${tag} GIF`)
+          .setTimestamp()
+          .setImage(res.data.images.original.url)
+          message.channel.send(embed);
+        }
+        else {
+          message.channel.send(`No gif found found for that filter! Please try a new filter.`);
+        }
+      });
+    }
   }
   else if (command === "start") {
     if (setup) {

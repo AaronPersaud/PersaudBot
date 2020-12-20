@@ -133,11 +133,9 @@ client.on("message", function(message) {
 
   }
   else if (command === "gif") {
-    // multiple arguments
     // no arguments
-    // space tag out in title
-    const tag = args[0] || null;
     if (args.length > 0) {
+      const tag = args.join(' ');
       giphy.random({
       tag: tag,
       }, function (err, res) {
@@ -145,7 +143,6 @@ client.on("message", function(message) {
           message.channel.send(`Something went wrong! Please try again.`);
         }
         else if (res.data.images) {
-          console.log(res)
           const embed = new Discord.MessageEmbed() 
           .setTitle(`Random ${tag} GIF`)
           .setTimestamp()
@@ -156,6 +153,9 @@ client.on("message", function(message) {
           message.channel.send(`No gif found found for that filter! Please try a new filter.`);
         }
       });
+    }
+    else {
+      message.channel.send(`Please provide a filter! For example: !gif pokemon`);
     }
   }
   else if (command === "start") {
